@@ -21,6 +21,8 @@ func main() {
 		log.Fatal("Usage: ./debezium <environment> <db_password>")
 	}
 
+	fmt.Println("pass : ", os.Args[2])
+
 	cfg, err := config.LoadConfig(os.Args[1], os.Args[2])
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
