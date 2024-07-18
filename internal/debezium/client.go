@@ -114,7 +114,7 @@ func (c *DebeziumClient) UpdateConnectorConfig(ctx context.Context, name string,
 	lambdaPayload := auth.SigV4LambdaPayload{
 		Method:   "PUT",
 		Endpoint: c.baseURL + "/connectors/" + name + "/config",
-		//Payload:  config,
+		Payload:  []byte("{\"hello\": \"world\"}"),
 	}
 
 	payload, err := json.Marshal(lambdaPayload)
@@ -136,7 +136,7 @@ func (c *DebeziumClient) UpdateConnectorConfig(ctx context.Context, name string,
 
 	resp, err := c.client.R().
 		SetHeaders(headers).
-		//SetBody(body).
+		SetBody([]byte("{\"hello\": \"world\"}")).
 		SetHeader("Content-Type", "application/json").
 		Put(c.baseURL + "/connectors/" + name + "/config")
 
