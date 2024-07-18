@@ -12,7 +12,7 @@ type Config struct {
 }
 
 func LoadConfig(env string, dbPassword string) (*Config, error) {
-	filename := fmt.Sprintf("config_%s.json", env)
+	filename := fmt.Sprintf("config/config_%s.json", env)
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
