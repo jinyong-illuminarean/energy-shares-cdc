@@ -34,15 +34,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: 1.22
-      - name: Update API Gateway Burst Limit
-        run: | 
-          aws apigatewayv2 update-stage --api-id jpjy65gqp8 --stage-name \$default --default-route-settings "ThrottlingBurstLimit=1000,ThrottlingRateLimit=1000"
-      - name: Build Debezium Updater
-        run: go build -o debezium ./cmd/debezium
 
       - name: Run Debezium Connect Update
         run: ./debezium ${{ github.event.inputs.environment }}
-
-      - name: Close API Gateway Burst Limit
-        run: |
-          aws apigatewayv2 update-stage --api-id jpjy65gqp8 --stage-name \$default --default-route-settings "ThrottlingBurstLimit=0,ThrottlingRateLimit=0"
