@@ -185,7 +185,7 @@ func (c *DebeziumClient) UpdateConnectorConfig(ctx context.Context, name string,
 	}
 
 	if resp.StatusCode() != 200 {
-		return fmt.Errorf("failed to update connector config, status: %d", resp.StatusCode())
+		return fmt.Errorf("failed to update connector config, status: %d, message: %s", resp.StatusCode(), string(resp.Body()))
 	}
 	return nil
 }
