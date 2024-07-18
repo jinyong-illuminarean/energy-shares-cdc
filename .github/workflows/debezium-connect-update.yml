@@ -35,5 +35,8 @@ jobs:
         with:
           go-version: 1.22
 
+      - name: Build Debezium Updater
+        run: go build -o debezium ./cmd/debezium
+
       - name: Run Debezium Connect Update
         run: ./debezium ${{ github.event.inputs.environment }}
