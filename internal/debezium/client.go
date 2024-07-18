@@ -127,7 +127,7 @@ func (c *DebeziumClient) UpdateConnectorConfig(ctx context.Context, name string,
 		return fmt.Errorf("failed to get auth headers: %v", err)
 	}
 
-	orderedConfig, err := json.MarshalIndent(config, "", "   ")
+	orderedConfig, err := json.MarshalIndent(config, "", "    ")
 	if err != nil {
 		return fmt.Errorf("fail to marshal: %v", err)
 	}
