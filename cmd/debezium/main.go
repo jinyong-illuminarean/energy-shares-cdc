@@ -3,60 +3,79 @@ package main
 import (
 	"context"
 	"fmt"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/private/energy-shares-cdc/internal/auth"
+	"github.com/private/energy-shares-cdc/internal/config"
+	"github.com/private/energy-shares-cdc/internal/debezium"
+	"log"
 	"os"
-
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/go-resty/resty/v2"
+	"time"
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: debezium-updater <environment>")
-		fmt.Println("Available environments: dev, qa, stage, prod")
-		os.Exit(1)
+	// 1분 타임아웃
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	if len(os.Args) != 3 {
+		log.Fatal("Usage: ./debezium <environment> <db_password>")
 	}
 
-	fmt.Printf("Debezium Updater[%s]\n", os.Args[1])
-
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("ap-northeast-2"))
+	cfg, err := config.LoadConfig(os.Args[1], os.Args[2])
 	if err != nil {
-		fmt.Printf("AWS 설정 로드 실패: %v\n", err)
-		os.Exit(1)
+		log.Fatalf("Error loading config: %v", err)
 	}
 
-	sigv4Client := auth.NewSigV4(cfg)
-
-	// Get Auth Headers
-	headers, err := sigv4Client.SignedHeaders(context.Background(), auth.SigV4LambdaPayload{
-		Method:   "GET",
-		Endpoint: "https://dbzm-common-gw.illuminarean.com",
-	})
-
+	awscfg, err := awsconfig.LoadDefaultConfig(context.TODO(), awsconfig.WithRegion("ap-northeast-2"))
 	if err != nil {
-		fmt.Printf("인증 헤더 가져오기 실패: %v\n", err)
-		os.Exit(1)
+		log.Fatalf("Error loading AWS config: %v", err)
 	}
 
-	// Print headers (similar to setting environment variables)
-	for k, v := range headers {
-		fmt.Printf("%s=%s\n", k, v)
+	signV4Client := auth.NewSigV4(awscfg)
+
+	client := debezium.New(signV4Client, cfg.DebeziumURL)
+
+	// 서버 헬스체크
+	if err := client.HealthCheck(ctx); err != nil {
+		log.Fatalf("Server health check failed: %v", err)
 	}
 
-	// Call API
-	client := resty.New()
-	response, err := client.R().
-		SetHeader("X-Amz-Date", headers["X-Amz-Date"]).
-		SetHeader("X-Amz-Security-Token", headers["X-Amz-Security-Token"]).
-		SetHeader("Authorization", headers["Authorization"]).
-		Get("https://dbzm-common-gw.illuminarean.com")
-
+	// connect 리스트 조회
+	connectors, err := client.ListConnectors(ctx)
 	if err != nil {
-		fmt.Printf("API 호출 실패: %v\n", err)
-		os.Exit(1)
+		log.Fatalf("Failed to list connectors: %v", err)
 	}
 
-	fmt.Println("Response Status Code:", response.StatusCode())
-	fmt.Println("Response Body:")
-	fmt.Println(string(response.Body()))
+	// 해당 환경에 맞는 커넥터가 존재하는지 확인
+	connectorName := fmt.Sprintf("mysql.%s.cdc", os.Args[1])
+	exists := false
+	for _, c := range connectors {
+		if c == connectorName {
+			exists = true
+			break
+		}
+	}
+
+	if exists {
+		// 커넥터가 존재하면 상세 조회 후 설정 업데이트
+		currentConfig, err := client.GetConnectorConfig(ctx, connectorName)
+		if err != nil {
+			log.Fatalf("Failed to get connector config: %v", err)
+		}
+
+		if !cfg.Compare(currentConfig) {
+			if err := client.UpdateConnectorConfig(ctx, connectorName, cfg.ConnectorConfig); err != nil {
+				log.Fatalf("Failed to update connector config: %v", err)
+			}
+			fmt.Println("Connector config updated successfully")
+		} else {
+			fmt.Println("Connector config is up to date")
+		}
+	} else {
+		// 커넥터가 존재하지 않으면 새로 생성
+		if err := client.CreateConnector(ctx, connectorName, cfg.ConnectorConfig); err != nil {
+			log.Fatalf("Failed to create connector: %v", err)
+		}
+		fmt.Println("Connector created successfully")
+	}
 }

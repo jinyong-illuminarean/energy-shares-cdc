@@ -38,5 +38,9 @@ jobs:
       - name: Build Debezium Updater
         run: go build -o debezium ./cmd/debezium
 
+      - name: Set environment variables
+        run: |
+          echo "DB_PASSWORD=${{ secrets[format('DB_PASSWORD_{0}', github.event.inputs.environment)] }}" >> $GITHUB_ENV
+
       - name: Run Debezium Connect Update
         run: ./debezium ${{ github.event.inputs.environment }}
