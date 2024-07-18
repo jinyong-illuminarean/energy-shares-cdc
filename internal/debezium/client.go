@@ -6,48 +6,7 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/private/energy-shares-cdc/internal/auth"
-	"sort"
 )
-
-type OrderedMap map[string]interface{}
-
-func (m OrderedMap) MarshalJSON() ([]byte, error) {
-	if m == nil {
-		return []byte("null"), nil
-	}
-
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	var buf []byte
-	buf = append(buf, '{')
-
-	for i, k := range keys {
-		if i > 0 {
-			buf = append(buf, ',')
-		}
-		// 키를 JSON 문자열로 마샬링
-		key, err := json.Marshal(k)
-		if err != nil {
-			return nil, err
-		}
-		buf = append(buf, key...)
-		buf = append(buf, ':')
-
-		// 값을 JSON으로 마샬링
-		val, err := json.Marshal(m[k])
-		if err != nil {
-			return nil, err
-		}
-		buf = append(buf, val...)
-	}
-
-	buf = append(buf, '}')
-	return buf, nil
-}
 
 type DebeziumClient struct {
 	client    *resty.Client
@@ -151,7 +110,7 @@ func (c *DebeziumClient) GetConnectorConfig(ctx context.Context, name string) (m
 	return *resp.Result().(*map[string]interface{}), nil
 }
 
-func (c *DebeziumClient) UpdateConnectorConfig(ctx context.Context, name string, config OrderedMap) error {
+func (c *DebeziumClient) UpdateConnectorConfig(ctx context.Context, name string, config map[string]interface{}) error {
 	lambdaPayload := auth.SigV4LambdaPayload{
 		Method:   "PUT",
 		Endpoint: c.baseURL + "/connectors/" + name + "/config",
@@ -168,7 +127,7 @@ func (c *DebeziumClient) UpdateConnectorConfig(ctx context.Context, name string,
 		return fmt.Errorf("failed to get auth headers: %v", err)
 	}
 
-	orderedConfig, err := json.Marshal(config)
+	orderedConfig, err := json.MarshalIndent(config, "", " ")
 	if err != nil {
 		return fmt.Errorf("fail to marshal: %v", err)
 	}
@@ -190,7 +149,7 @@ func (c *DebeziumClient) UpdateConnectorConfig(ctx context.Context, name string,
 	return nil
 }
 
-func (c *DebeziumClient) CreateConnector(ctx context.Context, name string, config OrderedMap) error {
+func (c *DebeziumClient) CreateConnector(ctx context.Context, name string, config map[string]interface{}) error {
 	body := map[string]interface{}{
 		"name":   name,
 		"config": config,
