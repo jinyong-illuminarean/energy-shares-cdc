@@ -40,11 +40,15 @@ func main() {
 		log.Fatalf("Server health check failed: %v", err)
 	}
 
+	fmt.Println("Server is healthy")
+
 	// connect 리스트 조회
 	connectors, err := client.ListConnectors(ctx)
 	if err != nil {
 		log.Fatalf("Failed to list connectors: %v", err)
 	}
+
+	fmt.Println("Connectors:", connectors)
 
 	// 해당 환경에 맞는 커넥터가 존재하는지 확인
 	connectorName := fmt.Sprintf("mysql.%s.cdc", os.Args[1])
@@ -56,12 +60,16 @@ func main() {
 		}
 	}
 
+	fmt.Println("Connector exists:", exists)
+
 	if exists {
 		// 커넥터가 존재하면 상세 조회 후 설정 업데이트
 		currentConfig, err := client.GetConnectorConfig(ctx, connectorName)
 		if err != nil {
 			log.Fatalf("Failed to get connector config: %v", err)
 		}
+
+		fmt.Println("Current connector config:", currentConfig)
 
 		if !cfg.Compare(currentConfig) {
 			if err := client.UpdateConnectorConfig(ctx, connectorName, cfg.ConnectorConfig); err != nil {
