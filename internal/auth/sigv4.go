@@ -24,17 +24,10 @@ func NewSigV4(cfg aws.Config) *SigV4Auth {
 	}
 }
 
-func (s SigV4Auth) SignedHeaders(ctx context.Context, payload SigV4LambdaPayload) (map[string]string, error) {
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("fail to marshal: %v", err)
-	}
-
-	fmt.Println(string(payloadBytes))
-
+func (s SigV4Auth) SignedHeaders(ctx context.Context, payload []byte) (map[string]string, error) {
 	result, err := s.client.Invoke(ctx, &lambda.InvokeInput{
 		FunctionName: aws.String("github-api-gw-token"),
-		Payload:      payloadBytes,
+		Payload:      payload,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("fail to invoke lambda: %v", err)

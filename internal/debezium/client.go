@@ -2,6 +2,7 @@ package debezium
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/private/energy-shares-cdc/internal/auth"
@@ -22,10 +23,17 @@ func New(sigV4Auth *auth.SigV4Auth, baseURL string) *DebeziumClient {
 }
 
 func (c *DebeziumClient) HealthCheck(ctx context.Context) error {
-	headers, err := c.sigV4Auth.SignedHeaders(ctx, auth.SigV4LambdaPayload{
+	lambdaPayload := auth.SigV4LambdaPayload{
 		Method:   "GET",
 		Endpoint: c.baseURL,
-	})
+	}
+
+	payload, err := json.Marshal(lambdaPayload)
+	if err != nil {
+		return fmt.Errorf("fail to marshal: %v", err)
+	}
+
+	headers, err := c.sigV4Auth.SignedHeaders(ctx, payload)
 
 	if err != nil {
 		return fmt.Errorf("failed to get auth headers: %v", err)
@@ -46,10 +54,17 @@ func (c *DebeziumClient) HealthCheck(ctx context.Context) error {
 }
 
 func (c *DebeziumClient) ListConnectors(ctx context.Context) ([]string, error) {
-	headers, err := c.sigV4Auth.SignedHeaders(ctx, auth.SigV4LambdaPayload{
+	lambdaPayload := auth.SigV4LambdaPayload{
 		Method:   "GET",
 		Endpoint: c.baseURL + "/connectors",
-	})
+	}
+
+	payload, err := json.Marshal(lambdaPayload)
+	if err != nil {
+		return nil, fmt.Errorf("fail to marshal: %v", err)
+	}
+
+	headers, err := c.sigV4Auth.SignedHeaders(ctx, payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get auth headers: %v", err)
 	}
@@ -67,10 +82,17 @@ func (c *DebeziumClient) ListConnectors(ctx context.Context) ([]string, error) {
 }
 
 func (c *DebeziumClient) GetConnectorConfig(ctx context.Context, name string) (map[string]interface{}, error) {
-	headers, err := c.sigV4Auth.SignedHeaders(ctx, auth.SigV4LambdaPayload{
+	lambdaPayload := auth.SigV4LambdaPayload{
 		Method:   "GET",
 		Endpoint: c.baseURL + "/connectors/" + name + "/config",
-	})
+	}
+
+	payload, err := json.Marshal(lambdaPayload)
+	if err != nil {
+		return nil, fmt.Errorf("fail to marshal: %v", err)
+	}
+
+	headers, err := c.sigV4Auth.SignedHeaders(ctx, payload)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get auth headers: %v", err)
@@ -89,18 +111,25 @@ func (c *DebeziumClient) GetConnectorConfig(ctx context.Context, name string) (m
 }
 
 func (c *DebeziumClient) UpdateConnectorConfig(ctx context.Context, name string, config map[string]interface{}) error {
-	headers, err := c.sigV4Auth.SignedHeaders(ctx, auth.SigV4LambdaPayload{
+	lambdaPayload := auth.SigV4LambdaPayload{
 		Method:   "PUT",
 		Endpoint: c.baseURL + "/connectors/" + name + "/config",
 		Payload:  config,
-	})
+	}
+
+	payload, err := json.Marshal(lambdaPayload)
+	if err != nil {
+		return fmt.Errorf("fail to marshal: %v", err)
+	}
+
+	headers, err := c.sigV4Auth.SignedHeaders(ctx, payload)
 	if err != nil {
 		return fmt.Errorf("failed to get auth headers: %v", err)
 	}
 
 	resp, err := c.client.R().
 		SetHeaders(headers).
-		SetBody(config).
+		SetBody(payload).
 		Put(c.baseURL + "/connectors/" + name + "/config")
 
 	if err != nil {
@@ -119,18 +148,25 @@ func (c *DebeziumClient) CreateConnector(ctx context.Context, name string, confi
 		"config": config,
 	}
 
-	headers, err := c.sigV4Auth.SignedHeaders(ctx, auth.SigV4LambdaPayload{
+	lambdaPayload := auth.SigV4LambdaPayload{
 		Method:   "PUT",
 		Endpoint: c.baseURL + "/connectors",
 		Payload:  body,
-	})
+	}
+
+	payload, err := json.Marshal(lambdaPayload)
+	if err != nil {
+		return fmt.Errorf("fail to marshal: %v", err)
+	}
+
+	headers, err := c.sigV4Auth.SignedHeaders(ctx, payload)
 	if err != nil {
 		return fmt.Errorf("failed to get auth headers: %v", err)
 	}
 
 	resp, err := c.client.R().
 		SetHeaders(headers).
-		SetBody(body).
+		SetBody(payload).
 		Post(c.baseURL + "/connectors")
 
 	if err != nil {
