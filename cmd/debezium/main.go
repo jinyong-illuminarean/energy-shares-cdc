@@ -2,49 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"github.com/private/energy-shares-cdc/internal/auth"
 	"os"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/go-resty/resty/v2"
 )
-
-type LambdaPayload struct {
-	Method   string `json:"method"`
-	Endpoint string `json:"endpoint"`
-}
-
-func getAuthHeaders(cfg aws.Config) (map[string]string, error) {
-	client := lambda.NewFromConfig(cfg)
-
-	payload := LambdaPayload{
-		Method:   "GET",
-		Endpoint: "https://dbzm-common-gw.illuminarean.com",
-	}
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("페이로드 마샬링 실패: %v", err)
-	}
-
-	result, err := client.Invoke(context.TODO(), &lambda.InvokeInput{
-		FunctionName: aws.String("github-api-gw-token"),
-		Payload:      payloadBytes,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("Lambda 함수 호출 실패: %v", err)
-	}
-
-	var headers map[string]string
-	err = json.Unmarshal(result.Payload, &headers)
-	if err != nil {
-		return nil, fmt.Errorf("응답 언마샬링 실패: %v", err)
-	}
-
-	return headers, nil
-}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -61,8 +25,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	sigv4Client := auth.NewSigV4(cfg)
+
 	// Get Auth Headers
-	headers, err := getAuthHeaders(cfg)
+	headers, err := sigv4Client.SignedHeaders(context.Background(), auth.SigV4LambdaPayload{
+		Method:   "GET",
+		Endpoint: "https://dbzm-common-gw.illuminarean.com",
+	})
+
 	if err != nil {
 		fmt.Printf("인증 헤더 가져오기 실패: %v\n", err)
 		os.Exit(1)
