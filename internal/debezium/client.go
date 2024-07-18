@@ -137,6 +137,7 @@ func (c *DebeziumClient) UpdateConnectorConfig(ctx context.Context, name string,
 	resp, err := c.client.R().
 		SetHeaders(headers).
 		SetBody(orderedConfig).
+		SetHeader("Content-Type", "application/json").
 		Put(c.baseURL + "/connectors/" + name + "/config")
 
 	if err != nil {
