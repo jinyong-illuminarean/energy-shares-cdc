@@ -75,16 +75,16 @@ func main() {
 
 	client := resty.New()
 
-	headers, err := getAuthHeaders()
-	if err != nil {
-		fmt.Printf("%v", err)
-		os.Exit(1)
-	}
+	//headers, err := getAuthHeaders()
+	//if err != nil {
+	//	fmt.Printf("%v", err)
+	//	os.Exit(1)
+	//}
 
 	response, err := client.R().
-		SetHeader("X-Amz-Date", headers["X-Amz-Date"]).
-		SetHeader("X-Amz-Security-Token", headers["X-Amz-Security-Token"]).
-		SetHeader("Authorization", headers["Authorization"]).
+		//SetHeader("X-Amz-Date", headers["X-Amz-Date"]).
+		//SetHeader("X-Amz-Security-Token", headers["X-Amz-Security-Token"]).
+		//SetHeader("Authorization", headers["Authorization"]).
 		Get("https://dbzm-common-gw.illuminarean.com")
 	if err != nil {
 		fmt.Printf("%v", err)
