@@ -43,4 +43,6 @@ jobs:
           echo "DB_PASSWORD=${{ secrets[format('DB_PASSWORD_{0}', github.event.inputs.environment)] }}" >> $GITHUB_ENV
 
       - name: Run Debezium Connect Update
-        run: ./debezium ${{ github.event.inputs.environment }}
+        run: ./debezium ${{ github.event.inputs.environment }} ${{ env.DB_PASSWORD }}
+        env:
+          DB_PASSWORD: ${{ secrets[format('DB_PASSWORD_{0}', github.event.inputs.environment)] }}
