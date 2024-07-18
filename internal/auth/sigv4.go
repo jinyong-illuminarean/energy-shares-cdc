@@ -30,6 +30,8 @@ func (s SigV4Auth) SignedHeaders(ctx context.Context, payload SigV4LambdaPayload
 		return nil, fmt.Errorf("fail to marshal: %v", err)
 	}
 
+	fmt.Println(string(payloadBytes))
+
 	result, err := s.client.Invoke(ctx, &lambda.InvokeInput{
 		FunctionName: aws.String("github-api-gw-token"),
 		Payload:      payloadBytes,
