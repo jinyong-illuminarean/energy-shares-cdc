@@ -40,8 +40,6 @@ func (s SigV4Auth) SignedHeaders(ctx context.Context, payload SigV4LambdaPayload
 		return nil, fmt.Errorf("fail to invoke lambda: %v", err)
 	}
 
-	fmt.Println(result)
-
 	var headers map[string]string
 
 	err = json.Unmarshal(result.Payload, &headers)
