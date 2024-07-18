@@ -28,5 +28,5 @@
   "transforms.routeTopic.type": "org.apache.kafka.connect.transforms.RegexRouter",
   "transforms.routeTopic.regex": "mysql.dev.cdc\\.esjp_esdb_dev\\.(.*)",
   "transforms.routeTopic.replacement": "mysql.dev.cdc.$1",
-  "snapshot.mode": "when_needed"
+  "snapshot.mode": "always"
 }
