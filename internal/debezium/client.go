@@ -127,16 +127,16 @@ func (c *DebeziumClient) UpdateConnectorConfig(ctx context.Context, name string,
 		return fmt.Errorf("failed to get auth headers: %v", err)
 	}
 
-	orderedConfig, err := json.MarshalIndent(config, "", "    ")
+	body, err := json.Marshal(config)
 	if err != nil {
 		return fmt.Errorf("fail to marshal: %v", err)
 	}
 
-	fmt.Println(string(orderedConfig))
+	fmt.Println("body: ", string(body))
 
 	resp, err := c.client.R().
 		SetHeaders(headers).
-		SetBody(orderedConfig).
+		SetBody(body).
 		SetHeader("Content-Type", "application/json").
 		Put(c.baseURL + "/connectors/" + name + "/config")
 
