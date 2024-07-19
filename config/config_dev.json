@@ -12,7 +12,6 @@
   "schema.history.internal.kafka.topic": "schema-changes.esjp_esdb_dev",
   "schema.history.internal.producer.security.protocol": "SASL_SSL",
   "database.hostname": "db.dev.energyshares.jp",
-  "database.password": "Yd4WRpjxcxaz2UXX",
   "name": "mysql.dev.cdc",
   "key.converter": "org.apache.kafka.connect.json.JsonConverter",
   "key.converter.schemas.enable": "false",
