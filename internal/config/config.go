@@ -22,13 +22,12 @@ func LoadConfig(env string, dbPassword string) (*Config, error) {
 	}(file)
 
 	var cfg Config
-	if err := json.NewDecoder(file).Decode(&cfg.ConnectorConfig); err != nil {
+	if err := json.NewDecoder(file).Decode(&cfg); err != nil {
 		return nil, err
 	}
 
 	// 민감한 정보를 환경 변수에서 로드
 	cfg.ConnectorConfig["database.password"] = dbPassword
-	cfg.DebeziumURL = "https://dbzm-common-gw.illuminarean.com" // 설정값으로 추출 필요
 
 	return &cfg, nil
 }
